@@ -20,14 +20,15 @@ async def process_type(callback: CallbackQuery, state: FSMContext):
     
     emoji = "💰" if trans_type == "income" else "💸"
     
+    # Создаём клавиатуру с кнопкой отмены
+    from keyboards import cancel_keyboard
     await safe_edit_message(
         callback,
         f"{emoji} Выбрано: {'Доход' if trans_type == 'income' else 'Расход'}\n\n"
         f"Введите сумму (например: 1500 или 1500.50):",
-        None
+        cancel_keyboard()
     )
     await state.set_state(TransactionState.waiting_for_amount)
-
 
 @router.message(TransactionState.waiting_for_amount)
 async def process_amount(message: Message, state: FSMContext):

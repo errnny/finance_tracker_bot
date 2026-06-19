@@ -66,3 +66,14 @@ async def main_menu_from_edit(callback: CallbackQuery):
         "Выберите действие:",
         reply_markup=main_menu_keyboard()
     )
+
+@router.callback_query(F.data == "main_menu")
+async def go_to_main_menu(callback: CallbackQuery, state: FSMContext):
+    """Переход в главное меню"""
+    await state.clear()
+    await safe_edit_message(
+        callback,
+        " Привет! Я финансовый трекер.\n\n"
+        "Выберите действие:",
+        main_menu_keyboard()
+    )

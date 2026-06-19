@@ -57,7 +57,8 @@ def stats_period_keyboard():
         [InlineKeyboardButton(text="🔄 Назад к 30 дням", callback_data="show_stats")],
         [InlineKeyboardButton(text="✏️ Редактировать", callback_data="edit_list"),
          InlineKeyboardButton(text="🗑️ Удалить", callback_data="delete_list")],
-        [InlineKeyboardButton(text="➕ Добавить", callback_data="add_new")]
+        [InlineKeyboardButton(text="➕ Добавить", callback_data="add_new")],
+        [InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")]
     ])
 
 
@@ -98,7 +99,7 @@ def after_edit_keyboard():
 def cancel_keyboard():
     """Клавиатура с кнопкой отмены"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=" Отмена", callback_data="cancel_transaction")]
+        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_transaction")]
     ])
 
 
@@ -106,4 +107,12 @@ def edit_cancel_keyboard():
     """Клавиатура отмены редактирования"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_edit")]
+    ])
+
+def edit_categories_keyboard(trans_type: str):
+    """Клавиатура категорий для редактирования"""
+    categories = INCOME_CATEGORIES if trans_type == "income" else EXPENSE_CATEGORIES
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=cat, callback_data=f"edit_cat_{cat}")]
+        for cat in categories
     ])

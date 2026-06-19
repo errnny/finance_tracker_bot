@@ -127,11 +127,13 @@ async def edit_category_start(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     trans_type = data.get("original_type", "expense")
     
+    await state.set_state(EditState.waiting_for_new_category)
+    
+    from keyboards import edit_categories_keyboard
     await callback.message.answer(
         "📁 Выберите новую категорию:",
-        reply_markup=categories_keyboard(trans_type)
+        reply_markup=edit_categories_keyboard(trans_type)
     )
-
 
 @router.callback_query(F.data.startswith("edit_cat_"))
 async def process_new_category(callback: CallbackQuery, state: FSMContext):

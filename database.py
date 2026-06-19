@@ -42,16 +42,24 @@ async def save_transaction(user_id: int, trans_type: str, amount: float, categor
 
 
 async def get_stats(user_id: int, period_days: int = 30):
-    """Получаем статистику за период"""
+    """Получаем статистику за период. Если period_days=None — за всё время."""
     conn = await asyncpg.connect(**DB_CONFIG)
     try:
+        # Формируем условие по дате
+        if period_days is not None:
+            date_filter = f"AND transaction_date >= CURRENT_DATE - INTERVAL '{period_days} days'"
+            period_label = f"за {period_days} дней"
+        else:
+            date_filter = ""
+            period_label = "за всё время"
+
         total_income = await conn.fetchval(
             f"""
             SELECT COALESCE(SUM(amount), 0) 
             FROM transactions 
             WHERE user_id = $1 
             AND transaction_type = 'income'
-            AND transaction_date >= CURRENT_DATE - INTERVAL '{period_days} days'
+            {date_filter}
             """,
             user_id
         )
@@ -62,7 +70,7 @@ async def get_stats(user_id: int, period_days: int = 30):
             FROM transactions 
             WHERE user_id = $1 
             AND transaction_type = 'expense'
-            AND transaction_date >= CURRENT_DATE - INTERVAL '{period_days} days'
+            {date_filter}
             """,
             user_id
         )
@@ -73,7 +81,7 @@ async def get_stats(user_id: int, period_days: int = 30):
             FROM transactions 
             WHERE user_id = $1 
             AND transaction_type = 'expense'
-            AND transaction_date >= CURRENT_DATE - INTERVAL '{period_days} days'
+            {date_filter}
             GROUP BY category
             ORDER BY total DESC
             """,
@@ -86,7 +94,7 @@ async def get_stats(user_id: int, period_days: int = 30):
             FROM transactions 
             WHERE user_id = $1 
             AND transaction_type = 'income'
-            AND transaction_date >= CURRENT_DATE - INTERVAL '{period_days} days'
+            {date_filter}
             GROUP BY category
             ORDER BY total DESC
             """,
@@ -98,13 +106,14 @@ async def get_stats(user_id: int, period_days: int = 30):
             SELECT id, transaction_type, amount, category, transaction_date, created_at
             FROM transactions 
             WHERE user_id = $1 
-            AND transaction_date >= CURRENT_DATE - INTERVAL '{period_days} days'
+            {date_filter}
             ORDER BY transaction_date DESC, created_at DESC
             """,
             user_id
         )
         
         return {
+            'period_label': period_label,
             'total_income': float(total_income),
             'total_expense': float(total_expense),
             'balance': float(total_income) - float(total_expense),

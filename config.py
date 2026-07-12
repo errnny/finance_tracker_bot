@@ -1,61 +1,59 @@
 import os
-import re
 from pathlib import Path
+
+# Загрузка .env для локальной разработки
 from dotenv import load_dotenv
-
-# Загрузка .env для локалки
 BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / '.env', override=True)
+ENV_PATH = BASE_DIR / '.env'
+if ENV_PATH.exists():
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-def clean_bot_token(raw_value: str | None) -> str:
-    """Агрессивная очистка токена от кавычек, пробелов и переносов"""
-    if not raw_value:
-        raise ValueError("Переменная BOT_TOKEN пуста!")
-        
-    # 1. Убираем пробелы и скрытые переносы строк
-    token = raw_value.strip().replace('\n', '').replace('\r', '')
+
+def clean_value(value):
+    """
+    Жёстко очищает значение от кавычек.
+    Работает даже если Railway добавляет кавычки.
+    """
+    if value is None:
+        return None
     
-    # 2. Убираем парные кавычки в начале и конце
-    if len(token) >= 2 and token[0] == token[-1] and token[0] in "\"'":
-        token = token[1:-1]
-        
-    # 3. На всякий случай вырезаем ВСЕ кавычки (токен Telegram их не содержит)
-    token = token.replace('"', '').replace("'", '')
+    value = str(value).strip()
     
-    # 4. Финальная проверка формата
-    if not re.match(r'^\d+[A-Za-z0-9_-]{30,}$', token):
-        print(f"⚠️  Внимание: Токен может быть повреждён. Сырое значение: {repr(raw_value)}")
-        
-    return token
+    # Убираем ВСЕ кавычки по краям (даже если их несколько)
+    while len(value) >= 2 and (
+        (value[0] == '"' and value[-1] == '"') or
+        (value[0] == "'" and value[-1] == "'")
+    ):
+        value = value[1:-1]
+    
+    return value
 
-# === ПРИМЕНЯЕМ ОЧИСТКУ ===
-BOT_TOKEN = clean_bot_token(os.getenv("BOT_TOKEN"))
 
-# === ЖЁСТКАЯ ДИАГНОСТИКА ===
-print("\n" + "="*50)
-print(" ДИАГНОСТИКА ТОКЕНА")
-print("="*50)
-print(f"📥 Сырое из env: {repr(os.getenv('BOT_TOKEN'))}")
-print(f"🧼 После очистки: {repr(BOT_TOKEN)}")
-print(f" Длина: {len(BOT_TOKEN)}")
-print("="*50 + "\n")
+# Получаем токен и чистим его
+BOT_TOKEN = clean_value(os.getenv("BOT_TOKEN"))
+
+# Отладка
+print(f"\n{'='*60}")
+print(f"🔍 ДИАГНОСТИКА")
+print(f"{'='*60}")
+print(f"Сырое значение: {repr(os.getenv('BOT_TOKEN'))}")
+print(f"После очистки: {repr(BOT_TOKEN)}")
+print(f"Длина: {len(BOT_TOKEN) if BOT_TOKEN else 0}")
+print(f"{'='*60}\n")
 
 if not BOT_TOKEN:
-    raise SystemExit("❌ ОШИБКА: Токен не найден или пуст!")
+    raise ValueError("❌ BOT_TOKEN не найден!")
 
-# Остальные переменные (тоже чистим на всякий случай)
-def clean(v):
-    return v.strip().replace('"', '').replace("'", '') if v else v
+print("✅ Токен загружен успешно!")
 
+# Настройки БД с очисткой
 DB_CONFIG = {
-    "user": clean(os.getenv("DB_USER", "postgres")),
-    "password": clean(os.getenv("DB_PASSWORD", "")),
-    "host": clean(os.getenv("DB_HOST", "localhost")),
-    "port": int(clean(os.getenv("DB_PORT", "5432"))),
-    "database": clean(os.getenv("DB_NAME", "finance_tracker")),
+    "user": clean_value(os.getenv("DB_USER", "postgres")),
+    "password": clean_value(os.getenv("DB_PASSWORD", "")),
+    "host": clean_value(os.getenv("DB_HOST", "localhost")),
+    "port": int(clean_value(os.getenv("DB_PORT", "5432"))),
+    "database": clean_value(os.getenv("DB_NAME", "finance_tracker")),
 }
 
 INCOME_CATEGORIES = ["Зарплата", "Премия", "Подработка", "Инвестиции", "Подарок", "Другое"]
 EXPENSE_CATEGORIES = ["Еда", "Транспорт", "Жильё", "Развлечения", "Одежда", "Здоровье", "Связь", "Другое"]
-
-print("✅ Конфигурация успешно загружена!")

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 # Загрузка .env
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / '.env'
-load_dotenv(dotenv_path=ENV_PATH, override=True)
+load_dotenv(dotenv_path=ENV_PATH, override=False)
 
 # Токен бота
 BOT_TOKEN = os.getenv("BOT_TOKEN")
